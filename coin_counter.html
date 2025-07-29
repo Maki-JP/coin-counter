@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Coin Counter</title>
+</head>
+<body>
+  <h1>Coin Counter</h1>
+
+  <input type="file" id="imageInput" accept="image/*">
+  <br>
+  <img id="imagePreview" src="#" alt="Upload image preview" style="max-width:300px; display:none;">
+  <br><br>
+
+  <h2>検出結果（JSON）を貼り付け</h2>
+  <textarea id="jsonInput" rows="10" cols="80" placeholder="ここにRoboflowからコピーしたJSONを貼ってください"></textarea>
+  <br>
+  <button onclick="countCoins()">計算する</button>
+
+  <h2>結果</h2>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById("imageInput").addEventListener("change", function(event) {
+      const reader = new FileReader();
+      reader.onload = function() {
+        const img = document.getElementById("imagePreview");
+        img.src = reader.result;
+        img.style.display = "block";
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    });
+
+    function countCoins() {
+      const jsonText = document.getElementById("jsonInput").value;
+      let data;
+      try {
+        data = JSON.parse(jsonText);
+      } catch (e) {
+        alert("JSONの構文にエラーがあります");
+        return;
+      }
+
+      const counts = {};
+      const coinValues = {
+        "1yen": 1,
+        "10yen": 10,
+        "50yen": 50,
+        "100yen": 100,
+        "500yen": 500
+      };
+
+      const predictions = data.predictions || [];
+      predictions.forEach(p => {
+        const label = p.class;
+        if (coinValues[label]) {
+          counts[label] = (counts[label] || 0) + 1;
+        }
+      });
+
+      let resultText = "各硬貨の枚数：<br>";
+      let total = 0;
+      for (let key in counts) {
+        const yen = coinValues[key];
+        const num = counts[key];
+        resultText += `${key}: ${num}枚<br>`;
+        total += yen * num;
+      }
+      resultText += `<br><strong>合計金額: ${total}円</strong>`;
+
+      document.getElementById("result").innerHTML = resultText;
+    }
+  </script>
+</body>
+</html>
